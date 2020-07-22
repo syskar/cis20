@@ -1,0 +1,21 @@
+Ansible 
+
+https://docs.ansible.com/ansible/latest/modules/list_of_windows_modules.html
+
+SecEdit.exe /export /cfg C:\temp\output.ini
+
+//////////////////
+
+Microsoft Document
+
+
+https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/0b40db09-d95d-40a6-8467-32aedec8140c
+
+https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/user-rights-assignment
+
+
+//////////////////
+
+
+
+https://github.com/GSA/ansible-os-win-2016/tree/master/tasks

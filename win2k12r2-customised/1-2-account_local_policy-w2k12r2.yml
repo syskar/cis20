@@ -1,0 +1,254 @@
+##########################
+##########################
+## CIS LEVEL 1 SETTINGS ##
+##########################
+##########################
+
+   - name: "1.1.1,CCE-37166-6 | Ensure 'Enforce password history' is set to '24 or more password(s)'"
+     win_security_policy:
+        section: System Access
+        key: PasswordHistorySize
+        value: 24
+     tags:
+         - rule_1.1.1
+
+   - name: "1.1.3,CCE-37073-4 | Ensure 'Minimum password age' is set to '1 or more day(s)' [GSA-0]"
+     win_security_policy:
+        section: System Access
+        key: MinimumPasswordAge
+        value: 1
+     tags:
+         - rule_1.1.3
+
+     #Local Security Policy limited to 14 chars at most for 'Minimum password length'; 16 chars (GSA Policy) implemented via Default Domain Policy Attribute for domain-joined nodes
+   - name: "1.1.4,CCE-36534-6 | Ensure 'Minimum password length' is set to '14 or more character(s)' [GSA-16]"
+     win_security_policy:
+        section: System Access
+        key: MinimumPasswordLength
+        value: 14 #16
+     tags:
+         - rule_1.1.4
+
+   - name: "1.2.2,CCE-36008-1 | Ensure 'Account lockout threshold' is set to '10 or fewer invalid logon attempt(s), but not 0' [GSA-5]"
+     win_security_policy:
+        section: System Access
+        key: LockoutBadCount
+        value: 5
+     tags:
+         - rule_1.2.2
+
+   - name: "2.2.2,CCE-35818-4 | Configure 'Access this computer from the network'"
+     win_user_right:
+        name: SeNetworkLogonRight
+        users:
+        - Administrators
+        - Authenticated Users
+        action: set
+   
+   - name: "2.2.6,CCE-37659-0 | Configure 'Allow log on locally'"
+     win_user_right:
+        name: SeInteractiveLogonRight
+        users:
+        - Administrators
+        action: set
+
+   - name: "2.2.8,CCE-35912-5 | Ensure 'Back up files and directories' is set to 'Administrators'"
+     win_user_right:
+        name: SeBackupPrivilege
+        users:
+        - Administrators
+        action: set
+        
+        
+     #Limiting hardening to only include the Guests group, since Local Account access will still be needed for non-domain-joined nodes
+   - name: "2.2.17,CCE-37954-5 | Configure 'Deny access to this computer from the network' [GSA-Guests, Local account]"
+     win_user_right:
+        name: SeDenyNetworkLogonRight
+        users:
+        - Guests
+        #- Local Account
+        action: set
+
+   - name: "2.2.18,CCE-36923-1 | Ensure 'Deny log on as a batch job' to include 'Guests'"
+     win_user_right:
+        name: SeDenyBatchLogonRight
+        users:
+        - Guests
+        action: set
+
+   - name: "2.2.19,CCE-36877-9 | Ensure 'Deny log on as a service' to include 'Guests'"
+     win_user_right:
+        name: SeDenyServiceLogonRight
+        users:
+        - Guests
+        action: set
+
+   - name: "2.2.20,CCE-37146-8 | Ensure 'Deny log on locally' to include 'Guests'"
+     win_user_right:
+        name: SeDenyInteractiveLogonRight
+        users:
+        - Guests
+        action: set
+
+     #Limiting hardening to only include the Guests group, since Local Account access will still be needed for non-domain-joined nodes
+   - name: "2.2.21,CCE-36867-0 | Ensure 'Deny log on through Remote Desktop Services' to include 'Guests, Local account'"
+     win_user_right:
+        name: SeDenyRemoteInteractiveLogonRight
+        users:
+        - Guests
+        #- Local Account
+        action: set
+
+   - name: "2.2.37,CCE-37613-7 | Ensure 'Restore files and directories' is set to 'Administrators'"
+     win_user_right:
+        name: SeRestorePrivilege
+        users:
+        - Administrators
+        action: set
+
+   - name: "2.2.38,CCE-38328-1 | Ensure 'Shut down the system' is set to 'Administrators'"
+     win_user_right:
+        name: SeShutdownPrivilege
+        users:
+        - Administrators
+        action: set
+        
+   - name: "2.3.1.2,CCE-36147-7 | Ensure 'Accounts - Block Microsoft accounts' is set to 'Users can't add or log on with Microsoft accounts'"
+     win_regedit:
+        path: HKLM:\Software\Microsoft\Windows\Currentversion\Policies\System
+        name: "NoConnectedUser"
+        data: "3"
+        type: dword
+   
+    # Changing the administrator name  as WeareAdmins
+   #- name: "2.3.1.5,CCE-38233-3 | Configure 'Accounts - Rename administrator account'"
+   #  win_security_policy:
+   #     section: System Access
+   #     key: NewAdministratorName
+   #     value: WeareAdmins       
+
+   # Changing the guest account name  as Disableme
+   #- name: "2.3.1.6,CCE-38027-9 | Configure 'Accounts - Rename guest account'"
+   #  win_security_policy:
+   #     section: System Access
+   #     key: NewGuestName
+   #     value: Disableme  
+   
+   - name: "2.3.4.1,CCE-37701-0 | Ensure 'Devices - Allowed to format and eject removable media' is set to 'Administrators'"
+     win_regedit:
+        path: HKLM:\Software\Microsoft\Windows Nt\Currentversion\Winlogon
+        name: "AllocateDASD"
+        data: "0"
+        type: string
+
+   - name: "2.3.7.3,CCE-38235-8 | Ensure 'Interactive logon - Machine inactivity limit' is set to '900 or fewer second(s), but not 0'"
+     win_regedit:
+        path: HKLM:\Software\Microsoft\Windows\Currentversion\Policies\System
+        name: "InactivityTimeoutSecs"
+        data: "900"
+        type: dword
+        
+   - name: "2.3.7.4,CCE-37226-8 | Configure 'Interactive logon - Message text for users attempting to log on'"
+     win_regedit:
+        path: HKLM:\Software\Microsoft\Windows\Currentversion\Policies\System
+        name: "LegalNoticeText"
+        data: "This system is subject to monitoring. Therefore, no expectation of privacy is to be assumed. Individuals found performing unauthorized activities are subject to disciplinary action including criminal prosecution."
+        type: string
+
+   - name: "2.3.7.5,CCE-37512-1 | Configure 'Interactive logon - Message title for users attempting to log on'"
+     win_regedit:
+        path: HKLM:\Software\Microsoft\Windows\Currentversion\Policies\System
+        name: "LegalNoticeCaption"
+        data: "IT SECURITY WARNING"
+        type: string        
+        
+   - name: "2.3.7.8,CCE-38240-8 | Ensure 'Interactive logon - Require Domain Controller Authentication to unlock workstation' is set to 'Enabled'"
+     win_regedit:
+        path: HKLM:\Software\Microsoft\Windows Nt\Currentversion\Winlogon
+        name: "ForceUnlockLogon"
+        data: "1"
+        type: dword
+        
+   - name: "2.3.7.9,CCE-38333-1 | Ensure 'Interactive logon - Smart card removal behavior' is set to 'Lock Workstation' or higher"
+     win_regedit:
+        path: HKLM:\Software\Microsoft\Windows Nt\Currentversion\Winlogon
+        name: "scremoveoption"
+        data: "1"
+        type: string
+
+   - name: "2.3.8.1,CCE-36325-9 | Ensure 'Microsoft network client - Digitally sign communications (always)' is set to 'Enabled'"
+     win_regedit:
+        path: HKLM:\System\Currentcontrolset\Services\Lanmanworkstation\Parameters
+        name: "RequireSecuritySignature"
+        data: "1"
+        type: dword
+        
+   - name: "2.3.9.2,CCE-37864-6 | Ensure 'Microsoft network server - Digitally sign communications (always)' is set to 'Enabled'"
+     win_regedit:
+        path: HKLM:\System\Currentcontrolset\Services\Lanmanserver\Parameters
+        name: "requiresecuritysignature"
+        data: "1"
+        type: dword        
+        
+   - name: "2.3.9.3,CCE-35988-5 | Ensure 'Microsoft network server - Digitally sign communications (if client agrees)' is set to 'Enabled'"
+     win_regedit:
+        path: HKLM:\System\Currentcontrolset\Services\Lanmanserver\Parameters
+        name: "enablesecuritysignature"
+        data: "1"
+        type: dword
+
+   - name: "2.3.10.3,CCE-36077-6 | Ensure 'Network access - Do not allow anonymous enumeration of SAM accounts and shares' is set to 'Enabled'"
+     win_regedit:
+        path: HKLM:\System\Currentcontrolset\Control\Lsa
+        name: "RestrictAnonymous"
+        data: "1"
+        type: dword
+        
+   - name: "2.3.11.1,CCE-38341-4 | Ensure 'Network security - Allow Local System to use computer identity for NTLM' is set to 'Enabled'"
+     win_regedit:
+        path: HKLM:\System\Currentcontrolset\Control\Lsa
+        name: "UseMachineId"
+        data: "1"
+        type: dword
+
+   - name: "2.3.11.2,CCE-37035-3 | Ensure 'Network security - Allow LocalSystem NULL session fallback' is set to 'Disabled'"
+     win_regedit:
+        path: HKLM:\System\Currentcontrolset\Control\Lsa\Msv1_0
+        name: "allownullsessionfallback"
+        data: "0"
+        type: dword
+
+   - name: "2.3.11.3,CCE-38047-7 | Ensure 'Network Security - Allow PKU2U authentication requests to this computer to use online identities' is set to 'Disabled'"
+     win_regedit:
+        path: HKLM:\System\Currentcontrolset\Control\Lsa\Pku2U
+        name: "AllowOnlineID"
+        data: "0"
+        type: dword
+        
+   - name: "2.3.11.4,CCE-37755-6 | Ensure 'Network security - Configure encryption types allowed for Kerberos' is set"
+     win_regedit:
+        path: HKLM:\Software\Microsoft\Windows\Currentversion\Policies\System\Kerberos\Parameters
+        name: "SupportedEncryptionTypes"
+        data: "2147483644"
+        type: dword
+        
+   - name: "2.3.11.7,CCE-36173-3 | Ensure 'Network security - LAN Manager authentication level' is set to 'Send NTLMv2 response only. Refuse LM&NTLM'"
+     win_regedit:
+        path: HKLM:\System\Currentcontrolset\Control\Lsa
+        name: "LMCompatibilityLevel"
+        data: "5"
+        type: dword
+
+   - name: "2.3.11.9,CCE-37553-5 | Ensure 'Network security - Minimum session security for NTLM SSP based (including secure RPC) clients' is set"
+     win_regedit:
+        path: HKLM:\System\Currentcontrolset\Control\Lsa\Msv1_0
+        name: "NTLMMinClientSec"
+        data: "537395200"
+        type: dword
+
+   - name: "2.3.11.10,CCE-37835-6 | Ensure 'Network security - Minimum session security for NTLM SSP based (including secure RPC) servers' is set"
+     win_regedit:
+        path: HKLM:\System\Currentcontrolset\Control\Lsa\Msv1_0
+        name: "NTLMMinServerSec"
+        data: "537395200"
+        type: dword

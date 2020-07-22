@@ -1,0 +1,94 @@
+##########################    EMET Settings #########################################
+
+#### Prior to appply this setting , install EMET 5.5.2 version downloading using 
+#### https://www.microsoft.com/en-us/download/confirmation.aspx?id=54264
+#### Copy the admx and adml file from c:\program files\EMET
+#### paste the admx file to C:\windows\policydefinitions\
+#### paste the adml file to C:\windows\policydefinitions\en-US
+#### Run this 
+
+
+        
+   - name: "18.9.24.2,CCE-38427-1 | Ensure 'Default Action and Mitigation Settings' is set to 'Enabled'"
+     win_regedit:
+        path: HKLM:\Software\Policies\Microsoft\EMET\SysSettings
+        name: "AntiDetours"
+        data: "1"
+        type: dword
+
+   - name: "18.9.24.2,CCE-38427-1 | Ensure 'Default Action and Mitigation Settings' is set to 'Enabled'"
+     win_regedit:
+        path: HKLM:\Software\Policies\Microsoft\EMET\SysSettings
+        name: "BannedFunctions"
+        data: "1"
+        type: dword
+
+   - name: "18.9.24.2,CCE-38427-1 | Ensure 'Default Action and Mitigation Settings' is set to 'Enabled'"
+     win_regedit:
+        path: HKLM:\Software\Policies\Microsoft\EMET\SysSettings
+        name: "DeepHooks"
+        data: "1"
+        type: dword
+
+   - name: "18.9.24.2,CCE-38427-1 | Ensure 'Default Action and Mitigation Settings' is set to 'Enabled'"
+     win_regedit:
+        path: HKLM:\Software\Policies\Microsoft\EMET\SysSettings
+        name: "ExploitAction"
+        data: "2"
+        type: dword
+        
+   - name: "18.9.24.3,CCE-38428-9 | Ensure 'Default Protections for Internet Explorer' is set to 'Enabled'"
+     win_shell: |
+       $RegKey= "HKLM:\Software\Policies\Microsoft\EMET\Defaults"
+       $Name= "*\Internet Explorer\iexplore.exe"
+       $value= "+EAF+ eaf_modules:mshtml.dll;flash*.ocx;jscript*.dll;vbscript.dll;vgx.dll +ASR asr_modules:npjpi*.dll;jp2iexp.dll;vgx.dll;msxml4*.dll;wshom.ocx;scrrun.dll;vbscript.dll asr_zones:1;2"
+       $propertytype= "String"
+       $propertytype= "String"
+       if (get-Itemproperty -Path $RegKey -Name $Name ) {
+       get-Item -Path $RegKey  | remove-itemproperty -Name $Name
+       }
+       New-Itemproperty -Path $RegKey -Name $Name  -value $value -PropertyType $propertytype
+        
+   - name: "18.9.24.4,CCE-36750-8 | Ensure 'Default Protections for Popular Software' is set to 'Enabled'"
+     win_shell: |
+       $RegKey= "HKLM:\Software\Policies\Microsoft\EMET\Defaults"
+       $Name= "*\Mozilla Thunderbird\thunderbird.exe"
+       $value= ""
+       $propertytype= "String"
+       if (get-Itemproperty -Path $RegKey -Name $Name ) {
+       get-Item -Path $RegKey  | remove-itemproperty -Name $Name
+       }
+       New-Itemproperty -Path $RegKey -Name $Name  -value $value -PropertyType $propertytype
+      
+   - name: "18.9.24.5,CCE-36515-5 | Ensure 'Default Protections for Recommended Software' is set to 'Enabled'"
+     win_shell: |
+       $RegKey= "HKLM:\Software\Policies\Microsoft\EMET\Defaults"
+       $Name= "*\Java\jre*\bin\javaws.exe"
+       $value= "-HeapSpray"
+       $propertytype= "String"
+       $propertytype= "String"
+       if (get-Itemproperty -Path $RegKey -Name $Name ) {
+       get-Item -Path $RegKey  | remove-itemproperty -Name $Name
+       }
+       New-Itemproperty -Path $RegKey -Name $Name  -value $value -PropertyType $propertytype
+
+   - name: "18.9.24.6,CCE-38437-0 | Ensure 'System ASLR' is set to 'Enabled: Application Opt-In'"
+     win_regedit:
+        path: HKLM:\Software\Policies\Microsoft\EMET\SysSettings
+        name: "ASLR"
+        data: "3"
+        type: dword
+        
+   - name: "18.9.24.7,CCE-38438-8 | Ensure 'System DEP' is set to 'Enabled: Application Opt-Out'"
+     win_regedit:
+        path: HKLM:\Software\Policies\Microsoft\EMET\SysSettings
+        name: "DEP"
+        data: "2"
+        type: dword
+
+   - name: "18.9.24.8,CCE-38439-6 | Ensure 'System ASLR' is set to 'Enabled: Application Opt-In'"
+     win_regedit:
+        path: HKLM:\Software\Policies\Microsoft\EMET\SysSettings
+        name: "SEHOP"
+        data: "2"
+        type: dword
