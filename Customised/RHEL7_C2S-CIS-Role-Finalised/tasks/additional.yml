@@ -1,0 +1,185 @@
+- name: "SCORED | 1.1.8  | PATCH | Ensure nodev option set on /var/tmp partition\n
+         SCORED | 1.1.9  | PATCH | Ensure nosuid option set on /var/tmp partition\n
+         SCORED | 1.1.10 | PATCH | Ensure noexec option set on /var/tmp partition"
+  mount:
+      name: "/var/tmp"
+      src: "{{ item.device }}"
+      state: mounted
+      fstype: "{{ item.fstype }}"
+      opts: "nodev,nosuid,noexec"
+  when:
+      #- sles12cis_vartmp['enabled'] == 'yes'
+      #- sles12cis_rule_1_1_8
+      #- sles12cis_rule_1_1_9
+      #- sles12cis_rule_1_1_10
+      - item.mount == "/var/tmp"
+  with_items: "{{ ansible_mounts }}"
+  #no_log: true
+  tags:
+      - level1
+      - scored
+      - patch
+      - rule_1.1.8
+      - rule_1.1.9
+      - rule_1.1.10
+      
+- name: "SCORED | 1.1.15 | PATCH | Ensure nodev option set on /dev/shm partition\n
+         SCORED | 1.1.16 | PATCH | Ensure nosuid option set on /dev/shm partition\n
+         SCORED | 1.1.17 | PATCH | Ensure noexec option set on /dev/shm partition"
+  mount:
+      name: /dev/shm
+      src: tmpfs
+      state: mounted
+      fstype: tmpfs
+      opts: "defaults,nodev,nosuid,noexec"
+  tags:
+      - level1
+      - scored
+      - patch
+      - rule_1.1.15
+      - rule_1.1.16
+      - rule_1.1.17
+
+- name: 2.2.7 Ensure NFS and RPC are not enabled | Disable service nfs, nfs-server, rpcbind
+  block:
+  - name: Gather the service facts
+    service_facts: null
+  - name: Disable service nfs
+    systemd:
+      name: nfs.service
+      enabled: 'no'
+      state: stopped
+      masked: 'yes'
+    when: '"nfs.service" in ansible_facts.services'
+  when:
+  - ansible_virtualization_role != "guest" or ansible_virtualization_type != "docker"
+  - unknown_severity | bool
+  - disable_strategy | bool
+  - no_reboot_needed | bool
+  - service_nfs_disabled | bool
+  - low_disruption | bool
+  - low_complexity | bool
+  tags:
+  - service_nfs_disabled
+  - unknown_severity
+  - disable_strategy
+  - low_complexity
+  - low_disruption
+  - no_reboot_needed
+  - CCE-80237-1
+  - NIST-800-53-CM-7(a)
+  - NIST-800-53-CM-7(b)
+  - NIST-800-53-CM-6(a)
+  - rule_2.2.7
+  
+- name: 3.1.1 Ensure IP forwarding is disabled 
+  block: 
+  - name: Ensure sysctl net.ipv4.ip_forward is set to 0
+    sysctl:
+      name: net.ipv4.ip_forward
+      value: '0'
+      state: present
+      reload: true
+  - name: Ensure sysctl net.ipv4.route.flush is set to 1
+    sysctl:
+      name: net.ipv4.route.flush
+      value: '1'
+      state: present
+      reload: true
+  when:
+  - ansible_virtualization_role != "guest" or ansible_virtualization_type != "docker"
+  - disable_strategy | bool
+  - reboot_required | bool
+  - sysctl_net_ipv4_ip_forward | bool
+  - medium_severity | bool
+  - medium_disruption | bool
+  - low_complexity | bool
+  tags:
+  - sysctl_net_ipv4_ip_forward
+  - medium_severity
+  - disable_strategy
+  - low_complexity
+  - medium_disruption
+  - reboot_required
+  - CCE-80157-1
+  - NIST-800-53-CM-7(a)
+  - NIST-800-53-CM-7(b)
+  - NIST-800-53-SC-5CM-6(a)
+  - NIST-800-53-SC-7(a)
+  - NIST-800-171-3.1.20
+  - DISA-STIG-RHEL-07-040740
+  - rule_3.1.1
+  
+- name: "SCORED | 4.2.4 | PATCH | Ensure permissions on all logfiles are configured"
+  command: find /var/log -type f -exec chmod g-wx,o-rwx {} +
+  #changed_when: no
+  failed_when: no
+  when:
+      - varlog_permission | bool
+  tags:
+      - level1
+      - level2
+      - rule_4.2.4
+      
+- name: "5.1.8 Ensure at/cron is restricted to authorized users"
+  block:
+  - name: Removal of file
+    file: 
+      path: "{{ item }}"
+      state: absent
+    with_items: 
+    - ["/etc/cron.deny", "/etc/at.deny"]
+  - name: Creating files
+    file: 
+      path: "{{ item }}"
+      owner: root
+      group: root
+      mode: g-rwx,o-rwx
+      state: touch
+    with_items:
+    - ["/etc/cron.allow", "/etc/at.allow" ]
+  when:
+      - cron_restriction | bool
+  tags:
+      - level1
+      - level2
+      - rule_5.1.8
+
+- name: 5.2.5 Ensure SSH MaxAuthTries is set to 4 or less 
+  lineinfile:
+      state: present
+      dest: /etc/ssh/sshd_config
+      regexp: '^(#)?MaxAuthTries \d'
+      line: 'MaxAuthTries 4'
+  when:
+  - sshd_maxtries | bool
+  tags:
+  - rule_5.2.5
+
+- name: "5.2.6 | PATCH | Ensure SSH IgnoreRhosts is enabled"
+  lineinfile:
+      state: present
+      dest: /etc/ssh/sshd_config
+      regexp: '^IgnoreRhosts'
+      line: 'IgnoreRhosts yes'
+  when:
+      - sshd_ignoreRhosts | bool
+  tags:
+      - level1
+      - level2
+      - patch
+      - rule_5.2.6
+      
+- name: "5.2.13 | PATCH | Ensure SSH LoginGraceTime is set to one minute or less"
+  lineinfile:
+      state: present
+      dest: /etc/ssh/sshd_config
+      regexp: '^LoginGraceTime'
+      line: "LoginGraceTime 60"
+  when:
+      - sshd_logingracetime | bool
+  tags:
+      - level1
+      - level2
+      - patch
+      - rule_5.2.13
